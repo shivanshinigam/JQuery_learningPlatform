@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LearnQuest — Super-Simple Lessons + Annotated Code</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <style>
+    :root{ --bg:#071428; --muted:#9aa4b2; --accent:#4A6CF7; --accent-2:#6FB3FF; --glass: rgba(255,255,255,0.03); }
+    html,body{height:100%; margin:0; font-family:Inter, "Segoe UI", Roboto, Arial; background:linear-gradient(180deg,#071025,#071428); color:#e6eef8;}
+    .app { display:grid; grid-template-columns: 260px 1fr 420px; gap:18px; height:100vh; padding:18px; box-sizing:border-box; }
+
+    /* SIDEBAR */
+    .sidebar{ background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:12px; padding:14px; box-shadow: 0 8px 30px rgba(2,6,23,0.6); border:1px solid rgba(255,255,255,0.03); overflow:auto; }
+    .logo{ font-weight:800; color:var(--accent); font-size:18px; margin-bottom:6px; }
+    .lessons-list{ margin-top:12px; }
+    .lesson-item{ padding:10px; border-radius:8px; cursor:pointer; margin-bottom:8px; background:transparent; transition: all 140ms; color:#dfe9fb; border:1px solid transparent; }
+    .lesson-item:hover{ transform: translateX(6px); background:var(--glass); border-color: rgba(255,255,255,0.02); }
+    .lesson-item.active{ background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#04203a; font-weight:700; box-shadow:0 6px 18px rgba(74,108,247,0.12); }
+
+    /* MAIN */
+    .main{ padding:18px; border-radius:12px; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00)); box-shadow: 0 8px 40px rgba(2,6,23,0.6); border:1px solid rgba(255,255,255,0.03); overflow:auto; }
+    .main-head{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
+    .title{ font-size:20px; font-weight:700; color:#eaf2ff; }
+    .meta{ color:var(--muted); font-size:13px; }
+    .lesson-card{ margin-top:14px; border-radius:10px; padding:16px; border:1px solid rgba(255,255,255,0.02); color:#d7e6ff; }
+
+    /* RIGHT */
+    .right{ padding:14px; border-radius:12px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); box-shadow: 0 8px 30px rgba(2,6,23,0.6); border:1px solid rgba(255,255,255,0.03); overflow:auto; }
+    .tab-row{ display:flex; gap:8px; margin-bottom:10px; }
+    .tab{ padding:8px 10px; border-radius:8px; cursor:pointer; background:transparent; color:#dfe9fb; border:1px solid transparent; }
+    .tab.active{ background: linear-gradient(90deg,var(--accent),var(--accent-2)); color:#04203a; font-weight:700; }
+    .code-view{ max-height:58vh; overflow:auto; background:#07122a; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.02); color:#cfe7ff; font-family:monospace; font-size:13px; white-space:pre; }
+    .editor{ width:100%; min-height:160px; font-family:monospace; font-size:13px; background:#041025; color:#dff3ff; border:1px solid rgba(255,255,255,0.03); border-radius:6px; padding:8px; box-sizing:border-box; }
+    .preview{ border:1px dashed rgba(255,255,255,0.04); margin-top:8px; padding:8px; border-radius:6px; background:#031026; min-height:100px; color:#e9f6ff; }
+    .btn{ background:var(--accent); color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; }
+    .btn:active{ transform:translateY(1px); }
+
+    .float-xp{ position:fixed; z-index:4000; font-weight:800; color:var(--accent); pointer-events:none; }
+
+    @media (max-width:1100px){ .app{ grid-template-columns:1fr; padding:12px; height:auto; } .right{order:3;} .sidebar{order:1;} .main{order:2;} }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- LEFT -->
+    <aside class="sidebar">
+      <div class="logo">LearnQuest</div>
+      <div class="meta">Super-simple lessons + annotated code</div>
+
+      <div style="margin-top:12px; font-weight:700; color:var(--muted)">Lessons</div>
+      <div class="lessons-list" id="lessons-list"></div>
+
+      <div style="margin-top:18px; font-weight:700; color:var(--muted)">Quick Actions</div>
+      <div style="margin-top:10px;">
+        <button class="btn" id="btn-complete" style="width:100%;">Complete current lesson</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="main-head">
+        <div>
+          <div class="title" id="main-title">Lesson</div>
+          <div class="meta" id="main-sub">Pick a lesson — super simple explanations</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="meta">XP: <span id="xp">0</span> • Level: <span id="level">1</span></div>
+          <div class="meta">Progress <span id="xp-percent">0%</span></div>
+        </div>
+      </div>
+
+      <div class="lesson-card" id="lesson-pane"></div>
+    </main>
+
+    <!-- RIGHT -->
+    <aside class="right">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:800; font-size:18px;" id="profile-name-display">You</div>
+          <div class="meta">Profile & Tools</div>
+        </div>
+        <div>
+          <div class="stat" id="coins">0 coins</div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;" class="tab-row">
+        <div class="tab active" data-tab="profile">Profile</div>
+        <div class="tab" data-tab="code">Annotated Code</div>
+      </div>
+
+      <div id="tab-profile" class="tab-content">
+        <div style="margin-top:8px;">
+          <div class="meta small" style="margin-bottom:6px;">Badges</div>
+          <div id="badges-list"></div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="meta small">Shop</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+            <div>
+              <div style="font-weight:700">Shiny Badge</div>
+              <div class="meta small">Cosmetic</div>
+            </div>
+            <div>
+              <div class="meta small">40</div>
+              <button class="btn" id="buy-badge" style="margin-top:6px;">Buy</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <div class="meta small">Leaderboard</div>
+          <div id="leaderboard" style="margin-top:8px; max-height:160px; overflow:auto;"></div>
+          <div style="margin-top:8px;">
+            <input id="player-name" placeholder="Your name" style="width:100%; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); background:transparent; color:#e6eef8;" />
+            <button class="btn" id="save-score" style="margin-top:8px; width:100%;">Save Score</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-code" class="tab-content" style="display:none;">
+        <div style="margin-top:6px; font-weight:700;">Annotated app.js — line-by-line</div>
+        <div id="annotated-code" class="code-view" tabindex="0"></div>
+        <div style="margin-top:8px; font-size:13px; color:var(--muted);">Tip: select lines to copy; the view is fully commented for beginners.</div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- level modal -->
+  <div class="modal" id="level-modal" style="display:none; position:fixed; inset:0; align-items:center; justify-content:center; background:rgba(2,6,23,0.6); z-index:5000;">
+    <div class="modal-card" style="background:linear-gradient(180deg,#07112a,#07132e); border-radius:12px; padding:22px; border:1px solid rgba(255,255,255,0.03); width:420px; text-align:center; color:#dff3ff;">
+      <div style="font-size:22px; font-weight:800;">Level Up! 🎉</div>
+      <div style="margin-top:10px;" id="modal-level"></div>
+      <div style="margin-top:14px;">
+        <button class="btn" id="close-modal">Nice</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="float-area"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
